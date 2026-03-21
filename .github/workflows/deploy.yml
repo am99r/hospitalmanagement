@@ -13,30 +13,37 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Configure AWS
+    - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Login to ECR
       run: |
-        aws ecr get-login-password --region us-east-1 | \
-        docker login --username AWS --password-stdin 642570498889.dkr.ecr.us-east-1.amazonaws.com
+        aws ecr get-login-password --region $AWS_REGION | \
+        docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com
 
-    - name: Build & Push Image
+    - name: Build Docker Image
       run: |
         docker build -t hospital-website .
-        docker tag hospital-website:latest 642570498889.dkr.ecr.us-east-1.amazonaws.com/hospital-website:latest
-        docker push 642570498889.dkr.ecr.us-east-1.amazonaws.com/hospital-website:latest
+
+    - name: Tag Docker Image
+      run: |
+        docker tag hospital-website:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+
+    - name: Push Docker Image to ECR
+      run: |
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
 
     - name: Deploy to EC2 (k3s)
       uses: appleboy/ssh-action@v0.1.6
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_KEY }}
+        key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          export KUBECONFIG=~/.kube/config
           cd ~/hospitalmanagement
           sudo kubectl apply -f k8s/deployment.yaml
