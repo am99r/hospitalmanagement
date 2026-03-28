@@ -11,8 +11,8 @@ RUN pip install --upgrade pip && \
     pip install -r requirement.txt
 
 # Run Django migrations
-RUN python manage.py makemigrations && \
-    python manage.py migrate
+
+RUN mkdir -p /app/data
 
 # Expose Django port
 EXPOSE 8000
