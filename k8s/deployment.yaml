@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hospital-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hospital
+  template:
+    metadata:
+      labels:
+        app: hospital
+    spec:
+      containers:
+      - name: hospital
+        image: 642570498889.dkr.ecr.us-east-1.amazonaws.com/hospital-website:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        volumeMounts:
+        - name: hospital-storage
+          mountPath: /app/data
+
+      volumes:
+      - name: hospital-storage
+        persistentVolumeClaim:
+          claimName: hospital-pvc
+
+      imagePullSecrets:
+      - name: ecr-secret
