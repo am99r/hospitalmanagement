@@ -15,8 +15,14 @@ spec:
       containers:
       - name: hospital
         image: 642570498889.dkr.ecr.us-east-1.amazonaws.com/hospital-website:latest
+
+        command: ["sh", "-c"]
+        args:
+          - python manage.py migrate && python manage.py runserver 0.0.0.0:8000
+
         ports:
         - containerPort: 8000
+
         resources:
           requests:
             cpu: "100m"
@@ -24,6 +30,7 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
+
         volumeMounts:
         - name: hospital-storage
           mountPath: /app/data
